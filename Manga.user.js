@@ -6,7 +6,7 @@
 // @version     1.0.0
 // @updateURL   https://github.com/kataoka271/foobar/blob/master/Manga.user.js
 // @include     https://loveheaven.net/*
-// @grant       none
+// @grant       GM_addStyle
 // ==/UserScript==
 
 (function () {
@@ -18,45 +18,57 @@
   }
   window.open = dummyWindowOpen;
 
-  let currentPageLeft = 0;
+  GM_addStyle(`
+.chapter-sliding2 {
+  overflow: hidden;
+  margin: auto;
+  background-color: black;
+  width: 90%;
+}
+.chapter-content2 {
+  overflow-x: visible;
+  transition: all 300ms 0s ease;
+  display: flex;
+  height: 100%;
+}
+.chapter-img2 {
+  flex-shrink: 0;
+  width: 50%;
+}
+`);
+
   let imgs = $$("div.chapter-content > img");
-  let div = document.createElement("div");
-  let old = $$("div.chapter-content")[0];
-  div.className = "chapter-content";
-  div.style.overflow = "hidden";
-  div.style.width = "100%";
-  div.style.height = "80%";
-  imgs.forEach(function (img) {
-    div.appendChild(img);
-    img.style.maxWidth = "none";
-    img.style.maxHeight = "none";
-    img.style.width = "50%";
-    img.style.height = "auto";
-    img.style.display = "none";
-  });
-  if (imgs.length >= 2) {
-    imgs[0].style.display = "";
-    imgs[1].style.display = "";
+  if (imgs.length == 0) {
+    return;
   }
-  old.parentNode.insertBefore(div, old);
+  let old = $$("div.chapter-content")[0];
+  if (!old) {
+    return;
+  }
+  let sliding = document.createElement("div");
+  sliding.className = "chapter-sliding2";
+  let content = document.createElement("div");
+  content.className = "chapter-content2";
+  imgs.forEach(function (img) {
+    img.className = "chapter-img2";
+    content.insertBefore(img, content.firstChild);
+  });
+  sliding.appendChild(content);
+  old.parentNode.insertBefore(sliding, old);
   old.parentNode.removeChild(old);
 
+  let currentPageLeft = 0;
   let showPage = function (page) {
-    if (page < 0) {
-      page = 0;
-    } else if (page >= imgs.length - 1) {
-      page = imgs.length - 2;
-    }
-    imgs[currentPageLeft].style.display = "none";
-    imgs[currentPageLeft + 1].style.display = "none";
-    imgs[page].style.display = "";
-    imgs[page + 1].style.display = "";
+    page = Math.min(imgs.length, Math.max(0, page));
+    let x = -50 * (imgs.length - 1 - page);
+    content.style.transform = "translateX(" + x + "%)";
     currentPageLeft = page;
   };
+  showPage(0);
   addEventListener("keydown", function (e) {
-    if (e.keyCode == 37) {
+    if (e.keyCode == 39) {
       showPage(currentPageLeft - (e.shiftKey ? 1 : 2))
-    } else if (e.keyCode == 39) {
+    } else if (e.keyCode == 37) {
       showPage(currentPageLeft + (e.shiftKey ? 1 : 2))
     }
   });
