@@ -20,20 +20,19 @@
 
   GM_addStyle(`
 .chapter-sliding2 {
+  background-color: black;
   overflow: hidden;
   margin: auto;
-  background-color: black;
-  width: 90%;
+  max-width: 120vmin;
 }
 .chapter-content2 {
-  overflow-x: visible;
   transition: all 300ms 0s ease;
   display: flex;
-  height: 100%;
 }
 .chapter-img2 {
   flex-shrink: 0;
   width: 50%;
+  height: auto;
 }
 `);
 
