@@ -23,7 +23,7 @@
   background-color: black;
   overflow: hidden;
   margin: auto;
-  max-width: 120vmin;
+  max-width: 137vh; /* 2*w/h = (959*2)/1400 */
 }
 .chapter-content2 {
   transition: all 300ms 0s ease;
