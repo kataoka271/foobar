@@ -22,18 +22,25 @@
   unsafeWindow.open = exportFunction(unsafeWindow, dummyWindowOpen);
 
   GM_addStyle(`
+.manga-wrapper {
+  margin: auto;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2000;
+}
+.manga-pagenum {
+  text-align: center;
+  font-size: 12pt;
+}
 .manga-sliding {
   background-color: black;
   overflow: hidden;
-  margin: auto;
   width: 100%;
   height: auto;
-  position: absolute;
-  left: 50%;
-  transform: translate(-50%, 0);
-  z-index: 2000;
 }
-.manga-content {
+.manga-slides {
   transition: all 300ms 0s ease;
   display: flex;
 }
@@ -53,8 +60,7 @@
     {
       pattern: "^https://mangabank.org/",
       imgs: "div#gallery-1 > figure > div > img",
-      container: "div#gallery-1",
-      lazyload: () => unsafeWindow.jQuery(unsafeWindow.document).trigger("customlazyloadxtevent")
+      container: "div#gallery-1"
     }
   ];
 
@@ -70,30 +76,44 @@
   if (!container) {
     return;
   }
+  let wrapper = document.createElement("div");
+  wrapper.className = "manga-wrapper";
+  let pagenum = document.createElement("div");
+  pagenum.className = "manga-pagenum";
+  pagenum.innerHTML = "0/" + imgs.length;
   let sliding = document.createElement("div");
   sliding.className = "manga-sliding";
   let width = imgs[0].getAttribute("width") ? parseInt(imgs[0].getAttribute("width")) : imgs[0].width;
   let height = imgs[0].getAttribute("height") ? parseInt(imgs[0].getAttribute("height")) : imgs[0].height;
   let aspect = width / height;
-  sliding.style.width = "min(calc(100vw - 20px), calc(200vh * " + aspect + "))";
-  let content = document.createElement("div");
-  content.className = "manga-content";
-  if (site.lazyload) {
-    content.addEventListener("transitionend", site.lazyload);
-  }
+  sliding.style.width = "min(calc(100vw - 20px - 100px), calc(200vh * " + aspect + " - 100px))";
+  let slides = document.createElement("div");
+  slides.className = "manga-slides";
   imgs.forEach(function (img) {
     img.className = "manga-img";
-    content.insertBefore(img, content.firstChild);
+    slides.insertBefore(img, slides.firstChild);
   });
-  sliding.appendChild(content);
-  container.parentNode.insertBefore(sliding, container);
+  sliding.appendChild(slides);
+  wrapper.appendChild(pagenum);
+  wrapper.appendChild(sliding);
+  container.parentNode.insertBefore(wrapper, container);
   container.parentNode.removeChild(container);
 
   let currentPageLeft = 0;
+  let loadPage = function (page) {
+    if (page >= 0 && page < imgs.length && imgs[page].getAttribute("data-src")) {
+      imgs[page].src = imgs[page].getAttribute("data-src");
+    }
+  };
   let showPage = function (page) {
     page = Math.min(imgs.length, Math.max(0, page));
     let x = -50 * (imgs.length - 1 - page);
-    content.style.transform = "translateX(" + x + "%)";
+    slides.style.transform = "translateX(" + x + "%)";
+    pagenum.innerHTML = (1 + page) + "/" + imgs.length;
+    loadPage(page + 1);
+    loadPage(page + 2);
+    loadPage(page - 1);
+    loadPage(page - 2);
     currentPageLeft = page;
   };
   let goNext = (shift) => showPage(currentPageLeft + (shift ? 1 : 2));
