@@ -22,22 +22,48 @@
   unsafeWindow.open = exportFunction(unsafeWindow, dummyWindowOpen);
 
   GM_addStyle(`
+:root {
+  --manga-image-aspect: 1.0;
+}
+.manga-viewer {
+  background-color: rgba(0, 0, 0, 0.85);
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  margin: 0;
+  padding: 0;
+  z-index: 2000;
+}
 .manga-wrapper {
   margin: auto;
   position: absolute;
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  z-index: 2000;
 }
 .manga-pagenum {
   text-align: center;
   font-size: 12pt;
+  color: rgb(255, 255, 255);
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  height: 1.5em;
+}
+.manga-pagenum-progress {
+  background-color: rgba(50, 50, 180, 0.85);
+  transition: all 300ms 0s ease;
+  margin-top: 1.0em;
+  margin-left: auto;
+  padding-top: 0.5em;
 }
 .manga-sliding {
   background-color: black;
   overflow: hidden;
-  width: 100%;
+  width: min(calc(100vw - 20px - 50px), calc(200vh * var(--manga-image-aspect) - 50px));
   height: auto;
 }
 .manga-slides {
@@ -76,17 +102,21 @@
   if (!container) {
     return;
   }
+  let viewer = document.createElement("div");
+  viewer.className = "manga-viewer";
   let wrapper = document.createElement("div");
   wrapper.className = "manga-wrapper";
   let pagenum = document.createElement("div");
   pagenum.className = "manga-pagenum";
   pagenum.innerHTML = "0/" + imgs.length;
+  let pagenumprogress = document.createElement("div");
+  pagenumprogress.className = "manga-pagenum-progress";
+  pagenumprogress.innerHTML = " ";
   let sliding = document.createElement("div");
   sliding.className = "manga-sliding";
   let width = imgs[0].getAttribute("width") ? parseInt(imgs[0].getAttribute("width")) : imgs[0].width;
   let height = imgs[0].getAttribute("height") ? parseInt(imgs[0].getAttribute("height")) : imgs[0].height;
-  let aspect = width / height;
-  sliding.style.width = "min(calc(100vw - 20px - 100px), calc(200vh * " + aspect + " - 100px))";
+  document.documentElement.style.setProperty("--manga-image-aspect", width / height);
   let slides = document.createElement("div");
   slides.className = "manga-slides";
   imgs.forEach(function (img) {
@@ -94,9 +124,18 @@
     slides.insertBefore(img, slides.firstChild);
   });
   sliding.appendChild(slides);
+  wrapper.appendChild(pagenumprogress);
   wrapper.appendChild(pagenum);
   wrapper.appendChild(sliding);
-  container.parentNode.insertBefore(wrapper, container);
+  viewer.appendChild(wrapper);
+
+  let shower = document.createElement("a");
+  shower.innerHTML = "##";
+  shower.addEventListener("click", function (e) { e.preventDefault(); viewer.style.display = "block"; });
+  viewer.addEventListener("dblclick", function (e) { e.preventDefault(); viewer.style.display = "none"; });
+
+  document.body.appendChild(viewer);
+  container.parentNode.insertBefore(shower, container);
   container.parentNode.removeChild(container);
 
   let currentPageLeft = 0;
@@ -110,6 +149,7 @@
     let x = -50 * (imgs.length - 1 - page);
     slides.style.transform = "translateX(" + x + "%)";
     pagenum.innerHTML = (1 + page) + "/" + imgs.length;
+    pagenumprogress.style.width = (100.0 * page / imgs.length) + "%";
     loadPage(page + 1);
     loadPage(page + 2);
     loadPage(page - 1);
