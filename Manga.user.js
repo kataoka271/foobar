@@ -13,6 +13,8 @@
 (function () {
 
   const wheelholdtime = 300; // ms
+  const defaultImageWidth = 960; // px
+  const defaultImageHeight = 1400; // px
 
   let $$ = e => document.querySelectorAll(e);
 
@@ -54,7 +56,7 @@
   height: 1.5em;
 }
 .manga-pagenum-progress {
-  background-color: rgba(50, 50, 180, 0.85);
+  background-color: rgba(100, 100, 180, 0.85);
   transition: all 300ms 0s ease;
   margin-top: 1.0em;
   margin-left: auto;
@@ -114,9 +116,11 @@
   pagenumprogress.innerHTML = " ";
   let sliding = document.createElement("div");
   sliding.className = "manga-sliding";
-  let width = imgs[0].getAttribute("width") ? parseInt(imgs[0].getAttribute("width")) : imgs[0].width;
-  let height = imgs[0].getAttribute("height") ? parseInt(imgs[0].getAttribute("height")) : imgs[0].height;
-  document.documentElement.style.setProperty("--manga-image-aspect", width / height);
+  imgs[0].addEventListener("load", function () {
+    let width = parseInt(this.getAttribute("width")) || this.width || defaultImageWidth;
+    let height = parseInt(this.getAttribute("height")) || this.height || defaultImageHeight;
+    document.documentElement.style.setProperty("--manga-image-aspect", width / height);
+  });
   let slides = document.createElement("div");
   slides.className = "manga-slides";
   imgs.forEach(function (img) {
@@ -130,7 +134,7 @@
   viewer.appendChild(wrapper);
 
   let shower = document.createElement("a");
-  shower.innerHTML = "##";
+  shower.innerHTML = "Show Manga Viewer";
   shower.addEventListener("click", function (e) { e.preventDefault(); viewer.style.display = "block"; });
   viewer.addEventListener("dblclick", function (e) { e.preventDefault(); viewer.style.display = "none"; });
 
