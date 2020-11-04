@@ -25,7 +25,7 @@
 
   GM_addStyle(`
 :root {
-  --manga-image-aspect: 1.0;
+  --manga-image-aspect: 0.6857143;
 }
 .manga-viewer {
   background-color: rgba(0, 0, 0, 0.85);
@@ -53,14 +53,18 @@
   top: 0;
   left: 0;
   bottom: 0;
-  height: 1.5em;
 }
-.manga-pagenum-progress {
-  background-color: rgba(100, 100, 180, 0.85);
+.manga-page-progress {
+  background-color: rgba(100, 100, 100, 0.85);
+  width: 100%;
+  cursor: pointer;
+}
+.manga-page-progress > div {
+  background-color: rgba(240, 170, 15, 0.85);
   transition: all 300ms 0s ease;
-  margin-top: 1.0em;
   margin-left: auto;
-  padding-top: 0.5em;
+  height: 8px;
+  margin-top: 15px; /* adjust sum to .manga-pagenum height */
 }
 .manga-sliding {
   background-color: black;
@@ -111,16 +115,22 @@
   let pagenum = document.createElement("div");
   pagenum.className = "manga-pagenum";
   pagenum.innerHTML = "0/" + imgs.length;
-  let pagenumprogress = document.createElement("div");
-  pagenumprogress.className = "manga-pagenum-progress";
-  pagenumprogress.innerHTML = " ";
+  let pageprogress = document.createElement("div");
+  pageprogress.className = "manga-page-progress";
+  let pageprogressbar = document.createElement("div");
   let sliding = document.createElement("div");
   sliding.className = "manga-sliding";
-  imgs[0].addEventListener("load", function () {
-    let width = parseInt(this.getAttribute("width")) || this.width || defaultImageWidth;
-    let height = parseInt(this.getAttribute("height")) || this.height || defaultImageHeight;
+  let setAspect = function (img) {
+    let width = parseInt(img.getAttribute("width")) || img.width || defaultImageWidth;
+    let height = parseInt(img.getAttribute("height")) || img.height || defaultImageHeight;
     document.documentElement.style.setProperty("--manga-image-aspect", width / height);
-  });
+    console.log("setAspect", width, height);
+  };
+  if (imgs[0].complete) {
+    setAspect(imgs[0]);
+  } else {
+    imgs[0].onload = () => setAspect(this);
+  }
   let slides = document.createElement("div");
   slides.className = "manga-slides";
   imgs.forEach(function (img) {
@@ -128,7 +138,8 @@
     slides.insertBefore(img, slides.firstChild);
   });
   sliding.appendChild(slides);
-  wrapper.appendChild(pagenumprogress);
+  pageprogress.appendChild(pageprogressbar);
+  wrapper.appendChild(pageprogress);
   wrapper.appendChild(pagenum);
   wrapper.appendChild(sliding);
   viewer.appendChild(wrapper);
@@ -149,11 +160,11 @@
     }
   };
   let showPage = function (page) {
-    page = Math.min(imgs.length, Math.max(0, page));
-    let x = -50 * (imgs.length - 1 - page);
+    page = Math.min(imgs.length, Math.max(0, page)); // 0 <= page <= n
+    let x = -50 * (imgs.length - 1 - page); // -50 * (imgs.length - 1) <= x <= 50
     slides.style.transform = "translateX(" + x + "%)";
-    pagenum.innerHTML = (1 + page) + "/" + imgs.length;
-    pagenumprogress.style.width = (100.0 * page / imgs.length) + "%";
+    pagenum.innerHTML = Math.min(imgs.length, page + 1) + "/" + imgs.length; // 1/n <= pagenum <= n/n
+    pageprogressbar.style.width = (100.0 * Math.min(imgs.length, page + 1) / imgs.length) + "%"; // 100/n <= width <= 100
     loadPage(page + 1);
     loadPage(page + 2);
     loadPage(page - 1);
@@ -163,6 +174,19 @@
   let goNext = (shift) => showPage(currentPageLeft + (shift ? 1 : 2));
   let goPrev = (shift) => showPage(currentPageLeft - (shift ? 1 : 2));
   showPage(0);
+
+  pageprogress.addEventListener("click", function (e) {
+    e.stopPropagation();
+    e.preventDefault();
+    let rect = e.currentTarget.getBoundingClientRect();
+    let x = e.clientX - rect.left;
+    let r = 1.0 - x / pageprogress.clientWidth; // 0.0 < r < 1.0
+    // if 0 <= r < 1/n then page = 0
+    // if (n-1)/n <= r < 1 then page = n-1
+    // if r = 1 then page = n
+    let page = Math.floor(r * imgs.length); // 0 <= page < n
+    showPage(page);
+  });
 
   addEventListener("keydown", function (e) {
     if (e.key == "ArrowRight") {
