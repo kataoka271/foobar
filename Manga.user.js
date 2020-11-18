@@ -13,12 +13,11 @@
 (function () {
 
   const wheelholdtime = 300; // ms
-  const defaultImageWidth = 960; // px
-  const defaultImageHeight = 1400; // px
+  const defaultAspect = 960 / 1400; // px/px
 
   let $$ = e => document.querySelectorAll(e);
 
-  function dummyWindowOpen() {
+  let dummyWindowOpen = function () {
     console.log("dummyWindowOpen");
   }
   unsafeWindow.open = exportFunction(unsafeWindow, dummyWindowOpen);
@@ -26,6 +25,9 @@
   GM_addStyle(`
 :root {
   --manga-image-aspect: 0.6857143;
+  --manga-pagenum-height: 15px;
+  --manga-page-progress-height: 8px;
+  --manga-sliding-height: calc(var(--manga-page-progress-height) + var(--manga-pagenum-height) + 10px);
 }
 .manga-viewer {
   background-color: rgba(0, 0, 0, 0.85);
@@ -43,6 +45,7 @@
   position: absolute;
   left: 50%;
   top: 50%;
+  height: 100%;
   transform: translate(-50%, -50%);
 }
 .manga-pagenum {
@@ -52,7 +55,7 @@
   position: absolute;
   top: 0;
   left: 0;
-  bottom: 0;
+  height: var(--manga-pagenum-height);
 }
 .manga-page-progress {
   background-color: rgba(100, 100, 100, 0.85);
@@ -63,23 +66,30 @@
   background-color: rgba(240, 170, 15, 0.85);
   transition: all 300ms 0s ease;
   margin-left: auto;
-  height: 8px;
-  margin-top: 15px; /* adjust sum to .manga-pagenum height */
+  height: var(--manga-page-progress-height);
+  margin-top: var(--manga-pagenum-height); /* adjust sum to .manga-pagenum height */
 }
 .manga-sliding {
   background-color: black;
   overflow: hidden;
-  width: min(calc(100vw - 20px - 50px), calc(200vh * var(--manga-image-aspect) - 50px));
-  height: auto;
+  width: min(calc(100vw - 20px - 50px), calc(2 * (100vh - var(--manga-sliding-height)) * var(--manga-image-aspect)));
+  height: calc(100vh - var(--manga-sliding-height));
 }
 .manga-slides {
   transition: all 300ms 0s ease;
   display: flex;
+  align-items: flex-start;
 }
-.manga-img {
+.manga-slides > img {
   flex-shrink: 0;
   width: 50%;
-  height: auto;
+  height: 100%;
+}
+.manga-slides > img.manga-slides-wide {
+  width: 100%;
+}
+.manga-slides > img.manga-slides-half {
+  width: 50%;
 }
 `);
 
@@ -114,29 +124,53 @@
   wrapper.className = "manga-wrapper";
   let pagenum = document.createElement("div");
   pagenum.className = "manga-pagenum";
-  pagenum.innerHTML = "0/" + imgs.length;
   let pageprogress = document.createElement("div");
   pageprogress.className = "manga-page-progress";
   let pageprogressbar = document.createElement("div");
   let sliding = document.createElement("div");
   sliding.className = "manga-sliding";
-  let setAspect = function (img) {
-    let width = parseInt(img.getAttribute("width")) || img.width || defaultImageWidth;
-    let height = parseInt(img.getAttribute("height")) || img.height || defaultImageHeight;
-    document.documentElement.style.setProperty("--manga-image-aspect", width / height);
-    console.log("setAspect", width, height);
+  let getAspect = function (img) {
+    let aWidth = img.getAttribute("width");
+    let aHeight = img.getAttribute("height");
+    let dataSrc = img.getAttribute("data-src");
+    let src = img.getAttribute("src");
+    let aspect = defaultAspect;
+    if (aWidth && aHeight) {
+      aspect = parseInt(aWidth) / parseInt(aHeight);
+    } else if (dataSrc == src && img.naturalWidth > 0 && img.naturalHeight > 0) {
+      aspect = img.naturalWidth / img.naturalHeight;
+    }
+    return aspect;
   };
-  if (imgs[0].complete) {
-    setAspect(imgs[0]);
-  } else {
-    imgs[0].onload = () => setAspect(this);
-  }
   let slides = document.createElement("div");
   slides.className = "manga-slides";
-  imgs.forEach(function (img) {
-    img.className = "manga-img";
+  let pages = [];
+  imgs.forEach(function (img, idx) {
+    if (getAspect(img) > 1) {
+      img.className = "manga-slides-wide";
+      pages.push(idx);
+      pages.push(idx);
+    } else {
+      img.className = "manga-slides-half";
+      pages.push(idx);
+    }
     slides.insertBefore(img, slides.firstChild);
   });
+  let setAspect = function (img) {
+    if (!img.complete) {
+      return;
+    }
+    let aspect = getAspect(img);
+    if (aspect > 1) {
+      aspect = aspect / 2;
+    }
+    aspect = Math.round(aspect * 1000) / 1000;
+    if (aspect == document.documentElement.style.getPropertyValue("--manga-image-aspect")) {
+      return;
+    }
+    console.log("set-aspect", aspect);
+    document.documentElement.style.setProperty("--manga-image-aspect", aspect);
+  };
   sliding.appendChild(slides);
   pageprogress.appendChild(pageprogressbar);
   wrapper.appendChild(pageprogress);
@@ -146,8 +180,16 @@
 
   let shower = document.createElement("a");
   shower.innerHTML = "Show Manga Viewer";
-  shower.addEventListener("click", function (e) { e.preventDefault(); viewer.style.display = "block"; });
-  viewer.addEventListener("dblclick", function (e) { e.preventDefault(); viewer.style.display = "none"; });
+  shower.addEventListener("click", function (e) {
+    e.stopPropagation();
+    e.preventDefault();
+    viewer.style.display = "block";
+  });
+  viewer.addEventListener("dblclick", function (e) {
+    e.stopPropagation();
+    e.preventDefault();
+    viewer.style.display = "none";
+  });
 
   document.body.appendChild(viewer);
   container.parentNode.insertBefore(shower, container);
@@ -155,20 +197,29 @@
 
   let currentPageLeft = 0;
   let loadPage = function (page) {
-    if (page >= 0 && page < imgs.length && imgs[page].getAttribute("data-src")) {
-      imgs[page].src = imgs[page].getAttribute("data-src");
+    if (page >= 0 && page < pages.length) {
+      let img = imgs[pages[page]];
+      let dataSrc = img.getAttribute("data-src");
+      let src = img.getAttribute("src");
+      if (dataSrc != src) {
+        img.src = dataSrc;
+      }
     }
   };
   let showPage = function (page) {
-    page = Math.min(imgs.length, Math.max(0, page)); // 0 <= page <= n
-    let x = -50 * (imgs.length - 1 - page); // -50 * (imgs.length - 1) <= x <= 50
+    page = Math.min(pages.length, Math.max(0, page)); // 0 <= page <= n
+    let x = -50 * (pages.length - 1 - page); // -50 * (n - 1) <= x <= 50
     slides.style.transform = "translateX(" + x + "%)";
-    pagenum.innerHTML = Math.min(imgs.length, page + 1) + "/" + imgs.length; // 1/n <= pagenum <= n/n
-    pageprogressbar.style.width = (100.0 * Math.min(imgs.length, page + 1) / imgs.length) + "%"; // 100/n <= width <= 100
+    pagenum.innerHTML = Math.min(pages.length, page + 1) + "/" + pages.length; // 1/n <= pagenum <= n/n
+    pageprogressbar.style.width = (100.0 * Math.min(pages.length, page + 1) / pages.length) + "%"; // 100/n <= width <= 100
+    loadPage(page - 2);
+    loadPage(page - 1);
+    loadPage(page);
     loadPage(page + 1);
     loadPage(page + 2);
-    loadPage(page - 1);
-    loadPage(page - 2);
+    if (page >= 0 && page < pages.length) {
+      setAspect(imgs[pages[page]]);
+    }
     currentPageLeft = page;
   };
   let goNext = (shift) => showPage(currentPageLeft + (shift ? 1 : 2));
@@ -184,7 +235,7 @@
     // if 0 <= r < 1/n then page = 0
     // if (n-1)/n <= r < 1 then page = n-1
     // if r = 1 then page = n
-    let page = Math.floor(r * imgs.length); // 0 <= page < n
+    let page = Math.floor(r * pages.length); // 0 <= page < n
     showPage(page);
   });
 
