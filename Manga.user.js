@@ -158,6 +158,7 @@
   });
   let setAspect = function (img) {
     if (!img.complete) {
+      img.addEventListener("load", (e) => setAspect(e.target));
       return;
     }
     let aspect = getAspect(img);
@@ -165,7 +166,8 @@
       aspect = aspect / 2;
     }
     aspect = Math.round(aspect * 1000) / 1000;
-    if (aspect == document.documentElement.style.getPropertyValue("--manga-image-aspect")) {
+    let currentAspect = document.documentElement.style.getPropertyValue("--manga-image-aspect");
+    if (Math.abs(currentAspect - aspect) < 0.001) {
       return;
     }
     console.log("set-aspect", aspect);
@@ -180,16 +182,18 @@
 
   let shower = document.createElement("a");
   shower.innerHTML = "Show Manga Viewer";
-  shower.addEventListener("click", function (e) {
+  let showViewer = function (e) {
     e.stopPropagation();
     e.preventDefault();
     viewer.style.display = "block";
-  });
-  viewer.addEventListener("dblclick", function (e) {
+  };
+  let hideViewer = function (e) {
     e.stopPropagation();
     e.preventDefault();
     viewer.style.display = "none";
-  });
+  };
+  shower.addEventListener("click", showViewer);
+  viewer.addEventListener("dblclick", hideViewer);
 
   document.body.appendChild(viewer);
   container.parentNode.insertBefore(shower, container);
@@ -244,6 +248,8 @@
       goPrev(e.shiftKey);
     } else if (e.key == "ArrowLeft") {
       goNext(e.shiftKey);
+    } else if (e.key == "Escape") {
+      hideViewer(e);
     }
   });
 
