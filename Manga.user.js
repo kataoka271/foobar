@@ -96,7 +96,7 @@
   let siteinfo = [
     {
       pattern: "^https://loveheaven.net/",
-      imgs: "div.chapter-content > img",
+      imgs: "div.chapter-content img",
       container: "div.chapter-content"
     },
     {
