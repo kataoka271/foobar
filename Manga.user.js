@@ -4,7 +4,7 @@
 // @author      k_hir@hotmail.com
 // @description manga viewer
 // @version     1.0.0
-// @updateURL   https://github.com/kataoka271/foobar/blob/master/Manga.user.js
+// @updateURL   https://github.com/kataoka271/userscripts/blob/master/Manga.user.js
 // @include     https://mangabank.org/*
 // @grant       GM_addStyle
 // @grant       GM_xmlhttpRequest
@@ -87,12 +87,6 @@
     console.log("dummyWindowOpen");
   };
   unsafeWindow.open = exportFunction(unsafeWindow, dummyWindowOpen);
-
-  if (unsafeWindow.lazyload) {
-    const lazy = unsafeWindow.lazyload();
-    lazy.destroy();
-    console.log("stop lazyload library");
-  }
 
   const sitelist = [
     {
@@ -188,6 +182,7 @@
       this.loadImage(offset);
       this.loadImage(offset + 1);
       this.loadImage(offset + 2);
+      this.loadImage(offset + 3);
       this.loadImage(offset - 1);
       this.loadImage(offset - 2);
       this.fitToImage(this.imageList[offset]);
@@ -244,7 +239,7 @@
     }
 
     loadImage(offset) {
-      if (offset < 0 || offset > this.imageList.length) {
+      if (offset < 0 || offset >= this.imageList.length) {
         return;
       }
       this.imageList[offset].loadLazy();
@@ -273,6 +268,11 @@
       } else {
         img.className = "manga-slides-half";
       }
+      if (img.hasAttribute("data-src")) {
+        img.setAttribute("manga-src", img.getAttribute("data-src"));
+        img.removeAttribute("data-src");
+      }
+      img.loading = "eager";
       img.addEventListener("click", () => this.loadForce());
     }
 
@@ -283,7 +283,7 @@
     on(event, func) { this.img.addEventListener(event, func); }
 
     loadLazy() {
-      const dataSrc = this.img.getAttribute("data-src");
+      const dataSrc = this.img.getAttribute("manga-src");
       const src = this.img.getAttribute("src");
       if (dataSrc != src) {
         this.img.src = dataSrc;
@@ -291,7 +291,7 @@
     }
 
     loadForce() {
-      const url = this.img.getAttribute("data-src");
+      const url = this.img.getAttribute("manga-src");
       GM_xmlhttpRequest({
         method: "GET",
         url: url,
@@ -301,7 +301,7 @@
           if (xhr.readyState === 4) {
             if (xhr.status === 200) {
               this.img.src = URL.createObjectURL(xhr.response);
-              this.img.setAttribute("data-src", this.img.src);
+              this.img.setAttribute("manga-src", this.img.src);
             } else {
               console.error(xhr.status + " " + xhr.statusText);
             }
@@ -316,7 +316,7 @@
     getImageAspect() {
       const aWidth = this.img.getAttribute("width");
       const aHeight = this.img.getAttribute("height");
-      const dataSrc = this.img.getAttribute("data-src");
+      const dataSrc = this.img.getAttribute("manga-src");
       const src = this.img.getAttribute("src");
       if (aWidth && aHeight) {
         return parseInt(aWidth) / parseInt(aHeight);
@@ -348,6 +348,7 @@
   }
 
   const slides = new Slides();
+
   imgs.forEach(img => slides.addImage(new WrappedImage(img)));
   document.body.appendChild(slides.elem);
   container.parentNode.insertBefore(slides.createOpenButton("Open Manga Viewer"), container);
