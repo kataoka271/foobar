@@ -292,6 +292,10 @@
 
     loadForce() {
       const url = this.img.getAttribute("manga-src");
+      if (url === this.img.src && this.img.complete) {
+        console.log("Image has already loaded");
+        return;
+      }
       GM_xmlhttpRequest({
         method: "GET",
         url: url,
