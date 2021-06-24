@@ -10,9 +10,7 @@
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 
-
 (function () {
-
   GM_addStyle(`
 :root {
   --manga-image-aspect: 0.6857143;
@@ -93,19 +91,20 @@
     {
       pattern: "^https://loveheaven.net/",
       imgs: "div.chapter-content img",
-      container: "div.chapter-content"
+      container: "div.chapter-content",
     },
     {
       pattern: "^https://mangabank.org/",
       imgs: "div#gallery-1 > figure > div > img",
-      container: "div#gallery-1"
-    }
+      container: "div#gallery-1",
+    },
   ];
 
   const defaultAspect = 960 / 1400; // px/px
   const wheelHoldTime = 300; // ms
-  const $$ = <T extends Element>(e: string) => { return document.querySelectorAll<T>(e); }
-
+  const $$ = <T extends Element>(e: string) => {
+    return document.querySelectorAll<T>(e);
+  };
 
   class Slides {
     viewer: HTMLDivElement;
@@ -180,7 +179,9 @@
       });
     }
 
-    get elem() { return this.viewer; }
+    get elem() {
+      return this.viewer;
+    }
 
     setOffset(offset: number) {
       if (offset < 0) {
@@ -188,9 +189,9 @@
       } else if (offset > this.numPages - 2) {
         offset = this.numPages - 2;
       }
-      this.slides.style.transform = "translateX(" + (-50 * (this.numPages - 2 - offset)) + "%)";
-      this.pagenum.innerHTML = (offset + 2) + "/" + this.numPages;
-      this.seekbar.style.width = (100.0 * (offset + 2) / this.numPages) + "%";
+      this.slides.style.transform = "translateX(" + -50 * (this.numPages - 2 - offset) + "%)";
+      this.pagenum.innerHTML = offset + 2 + "/" + this.numPages;
+      this.seekbar.style.width = (100.0 * (offset + 2)) / this.numPages + "%";
       this.loadImage(offset);
       this.loadImage(offset + 1);
       this.loadImage(offset + 2);
@@ -214,13 +215,21 @@
       console.log("set-aspect", aspect);
     }
 
-    goNext(shift: boolean) { this.setOffset(this.slideOffset + (shift ? 1 : 2)); }
+    goNext(shift: boolean) {
+      this.setOffset(this.slideOffset + (shift ? 1 : 2));
+    }
 
-    goPrev(shift: boolean) { this.setOffset(this.slideOffset - (shift ? 1 : 2)); }
+    goPrev(shift: boolean) {
+      this.setOffset(this.slideOffset - (shift ? 1 : 2));
+    }
 
-    open() { this.viewer.style.display = "block"; }
+    open() {
+      this.viewer.style.display = "block";
+    }
 
-    close() { this.viewer.style.display = "none"; }
+    close() {
+      this.viewer.style.display = "none";
+    }
 
     addImage(img: WrappedImage) {
       if (img.isFull()) {
@@ -234,7 +243,7 @@
       this.slides.insertBefore(img.elem, this.slides.firstChild);
     }
 
-    fitToImage(img : WrappedImage) {
+    fitToImage(img: WrappedImage) {
       if (!img.complete) {
         img.on("load", () => this.fitToImage(img));
         return;
@@ -267,9 +276,7 @@
       });
       return button;
     }
-
   }
-
 
   class WrappedImage {
     img: HTMLImageElement;
@@ -289,11 +296,17 @@
       img.addEventListener("click", () => this.loadForce());
     }
 
-    get elem() { return this.img; }
+    get elem() {
+      return this.img;
+    }
 
-    get complete() { return this.img.complete; }
+    get complete() {
+      return this.img.complete;
+    }
 
-    on(event: string, func: any) { this.img.addEventListener(event, func); }
+    on(event: string, func: any) {
+      this.img.addEventListener(event, func);
+    }
 
     loadLazy() {
       const dataSrc = this.img.getAttribute("manga-src");
@@ -329,7 +342,7 @@
         },
         ontimeout: () => {
           console.error("The request for " + url + " timed out");
-        }
+        },
       });
     }
 
@@ -350,11 +363,9 @@
     isFull() {
       return this.getImageAspect() > 1;
     }
-
   }
 
-
-  const site = sitelist.find(it => new RegExp(it.pattern).test(location.href));
+  const site = sitelist.find((it) => new RegExp(it.pattern).test(location.href));
   if (!site) {
     return;
   }
@@ -369,7 +380,7 @@
 
   const slides = new Slides();
 
-  imgs.forEach(img => slides.addImage(new WrappedImage(img)));
+  imgs.forEach((img) => slides.addImage(new WrappedImage(img)));
   document.body.appendChild(slides.elem);
   container.parentNode?.insertBefore(slides.createOpenButton("Open Manga Viewer"), container);
   container.parentNode?.removeChild(container);
@@ -385,5 +396,4 @@
   });
 
   slides.setOffset(0);
-
 })();

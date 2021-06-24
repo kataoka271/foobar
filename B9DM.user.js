@@ -4,48 +4,50 @@
 // @author      k_hir@hotmail.com
 // @description surpress popup ads on B9DM
 // @version     1.0.5
-// @updateURL   https://github.com/kataoka271/foobar/blob/master/B9DM.user.js
+// @updateURL   https://github.com/kataoka271/userscript/blob/master/B9DM.user.js
 // @include     http://b9good.com/*
 // @grant       none
 // @run-at      document-start
 // ==/UserScript==
-
 (function () {
-
-  function removePopup() {
-    for (var e = document.body.firstElementChild; e != null; e = e.nextElementSibling) {
-      if (e.className === "wrap" && e.firstElementChild && e.firstElementChild.id.indexOf("p_root_") === 0) {
-        report(e.style.display !== "none", "wrap class element", e);
-        e.style.display = "none";
-      } else if (e.style && e.style.zIndex > 10000) {
-        report(e.style.visibility !== "hidden", "zIndex is too large", e);
-        e.style.visibility = "hidden";
-        e.style.backgroundColor = "rgba(200,50,50,0.5)";
-        if (e.firstElementChild && e.firstElementChild.style && e.firstElementChild.style.zIndex > 10000) {
-          report(e.firstElementChild.style.visibility !== "hidden", "zIndex is too large", e);
-          e.firstElementChild.style.visibility = "hidden";
-          e.firstElementChild.style.backgroundColor = "rgba(200,50,50,0.5)";
+    function removePopup() {
+        document.body.childNodes.forEach((e) => {
+            var _a, _b, _c;
+            if (!(e instanceof HTMLElement)) {
+                return;
+            }
+            if (e.className === "wrap" && ((_a = e.firstElementChild) === null || _a === void 0 ? void 0 : _a.id.indexOf("p_root_")) === 0) {
+                putLogIf(e.style.display !== "none", "wrap class element", e);
+                e.style.display = "none";
+            }
+            else if (e.style && parseInt(e.style.zIndex) > 10000) {
+                putLogIf(e.style.visibility !== "hidden", "zIndex is too large", e);
+                e.style.visibility = "hidden";
+                e.style.backgroundColor = "rgba(200,50,50,0.5)";
+                const child = e.firstElementChild;
+                if (child instanceof HTMLElement && parseInt((_c = (_b = child === null || child === void 0 ? void 0 : child.style) === null || _b === void 0 ? void 0 : _b.zIndex) !== null && _c !== void 0 ? _c : 0) > 10000) {
+                    putLogIf(child.style.visibility !== "hidden", "zIndex is too large", e);
+                    child.style.visibility = "hidden";
+                    child.style.backgroundColor = "rgba(200,50,50,0.5)";
+                }
+            }
+        });
+        setTimeout(removePopup, 3000);
+    }
+    function dummyWindowOpen() {
+        console.log("dummyWindowOpen");
+        return null;
+    }
+    window.open = dummyWindowOpen;
+    function putLogIf(condition, text, elem) {
+        if (!condition) {
+            return;
         }
-      }
+        console.log(text, elem);
     }
-    setTimeout(removePopup, 3000);
-  }
-
-  function dummyWindowOpen() {
-    console.log("dummyWindowOpen");
-  }
-
-  function report(pred, text, elem) {
-    if (pred) {
-      console.log(text, elem);
-    }
-  }
-
-  addEventListener("message", function (e) {
-    console.log("message", e);
-    e.stopImmediatePropagation();
-  }, true);
-  addEventListener("DOMContentLoaded", removePopup, false);
-  window.open = dummyWindowOpen;
-
+    window.addEventListener("message", function (e) {
+        console.log("message", e);
+        e.stopImmediatePropagation();
+    }, true);
+    window.addEventListener("DOMContentLoaded", removePopup, false);
 })();

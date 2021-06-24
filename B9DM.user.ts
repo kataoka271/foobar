@@ -11,7 +11,6 @@
 // ==/UserScript==
 
 (function () {
-
   function removePopup() {
     document.body.childNodes.forEach((e) => {
       if (!(e instanceof HTMLElement)) {
@@ -54,5 +53,4 @@
   }, true);
 
   window.addEventListener("DOMContentLoaded", removePopup, false);
-
 })();
