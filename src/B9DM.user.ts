@@ -4,7 +4,7 @@
 // @author      k_hir@hotmail.com
 // @description surpress popup ads on B9DM
 // @version     1.0.6
-// @updateURL   https://github.com/kataoka271/userscript/blob/master/B9DM.user.js
+// @updateURL   https://github.com/kataoka271/userscript/blob/master/dist/B9DM.user.js
 // @include     http://b9good.com/*
 // @grant       none
 // @run-at      document-start
