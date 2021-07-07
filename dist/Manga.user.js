@@ -4,7 +4,7 @@
 // @author      k_hir@hotmail.com
 // @description manga viewer
 // @version     1.0.1
-// @updateURL   https://github.com/kataoka271/userscripts/blob/master/dist/Manga.user.js
+// @updateURL   https://github.com/kataoka271/userscripts/raw/master/dist/Manga.user.js
 // @include     https://mangabank.org/*
 // @grant       GM_addStyle
 // @grant       GM_xmlhttpRequest
