@@ -95,8 +95,8 @@
     },
     {
       pattern: "^https://mangabank.org/",
-      imgs: "div#gallery-1 > figure > div > img",
-      container: "div#gallery-1",
+      imgs: "div#gallery-1 > figure > div > img, div#gallery-2 > figure > div > img",
+      container: "div#gallery-1, div#gallery-2",
     },
   ];
 
@@ -381,8 +381,8 @@
   if (imgs.length == 0) {
     return;
   }
-  const container = $$(site.container)[0];
-  if (!container) {
+  const container = $$(site.container);
+  if (container.length === 0) {
     return;
   }
 
@@ -390,8 +390,10 @@
 
   imgs.forEach((img) => slides.addImage(new WrappedImage(img)));
   document.body.appendChild(slides.elem);
-  container.parentNode?.insertBefore(slides.createOpenButton("Open Manga Viewer"), container);
-  container.parentNode?.removeChild(container);
+  container[0].parentNode?.insertBefore(slides.createOpenButton("Open Manga Viewer"), container[0]);
+  container.forEach((e) => {
+    e.parentNode?.removeChild(e);
+  });
 
   document.body.addEventListener("keydown", (e) => {
     if (e.key == "ArrowRight") {

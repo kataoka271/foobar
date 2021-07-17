@@ -10,7 +10,7 @@
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 (function () {
-    var _a, _b;
+    var _a;
     GM_addStyle(`
 :root {
   --manga-image-aspect: 0.6857143;
@@ -93,8 +93,8 @@
         },
         {
             pattern: "^https://mangabank.org/",
-            imgs: "div#gallery-1 > figure > div > img",
-            container: "div#gallery-1",
+            imgs: "div#gallery-1 > figure > div > img, div#gallery-2 > figure > div > img",
+            container: "div#gallery-1, div#gallery-2",
         },
     ];
     const defaultAspect = 960 / 1400; // px/px
@@ -343,15 +343,18 @@
     if (imgs.length == 0) {
         return;
     }
-    const container = $$(site.container)[0];
-    if (!container) {
+    const container = $$(site.container);
+    if (container.length === 0) {
         return;
     }
     const slides = new Slides();
     imgs.forEach((img) => slides.addImage(new WrappedImage(img)));
     document.body.appendChild(slides.elem);
-    (_a = container.parentNode) === null || _a === void 0 ? void 0 : _a.insertBefore(slides.createOpenButton("Open Manga Viewer"), container);
-    (_b = container.parentNode) === null || _b === void 0 ? void 0 : _b.removeChild(container);
+    (_a = container[0].parentNode) === null || _a === void 0 ? void 0 : _a.insertBefore(slides.createOpenButton("Open Manga Viewer"), container[0]);
+    container.forEach((e) => {
+        var _a;
+        (_a = e.parentNode) === null || _a === void 0 ? void 0 : _a.removeChild(e);
+    });
     document.body.addEventListener("keydown", (e) => {
         if (e.key == "ArrowRight") {
             slides.goPrev(e.shiftKey);
