@@ -197,6 +197,12 @@
         goPrev(shift) {
             this.setOffset(this.slideOffset - (shift ? 1 : 2));
         }
+        goHome() {
+            this.setOffset(0);
+        }
+        goEnd() {
+            this.setOffset(this.numPages - 2);
+        }
         open() {
             this.viewer.style.display = "block";
         }
@@ -355,6 +361,12 @@
         }
         else if (e.key == "Escape") {
             slides.close();
+        }
+        else if (e.key == "Home") {
+            slides.goHome();
+        }
+        else if (e.key == "End") {
+            slides.goEnd();
         }
     });
     slides.setOffset(0);
